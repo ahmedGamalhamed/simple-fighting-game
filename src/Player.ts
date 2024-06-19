@@ -1,6 +1,6 @@
-export class Sprite {
+export class Player {
   static initailWidth = 50;
-  public width = Sprite.initailWidth;
+  public width = Player.initailWidth;
   public height = 150;
   public canvasContext: CanvasRenderingContext2D;
   public health = 100;
@@ -60,6 +60,7 @@ export class Sprite {
   }
 
   updateVelocity() {
+    const floor = this.canvas.height - 20;
     if (this.pressedKeys.l) {
       this.velocity.x = -this.speed;
       this.direction = -1;
@@ -70,11 +71,11 @@ export class Sprite {
       this.velocity.x = 0;
     }
 
-    if (this.pressedKeys.u && this.position.y + this.height >= this.canvas.height) {
+    if (this.pressedKeys.u && this.position.y + this.height >= floor) {
       this.velocity.y = this.gravity * -this.jumpFactor;
     }
 
-    if (this.position.y + this.height + this.velocity.y < this.canvas.height) this.velocity.y += this.gravity;
+    if (this.position.y + this.height + this.velocity.y < floor) this.velocity.y += this.gravity;
     else this.velocity.y = 0;
   }
 

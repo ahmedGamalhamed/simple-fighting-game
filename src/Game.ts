@@ -1,8 +1,8 @@
-import { Sprite } from "./Sprite";
+import { Player } from "./Player";
 
 export class Game {
   time = 60;
-  constructor(public canvasContext: CanvasRenderingContext2D, public player1: Sprite, public player2: Sprite) {
+  constructor(public canvasContext: CanvasRenderingContext2D, public player1: Player, public player2: Player) {
     // console.log(this.player1);
     setInterval(() => {
       this.time -= 1;
@@ -27,7 +27,7 @@ export class Game {
     this.drawPlayerHealthBar(start2, width, this.player2);
   }
 
-  drawPlayerHealthBar(x: number, width: number, player: Sprite) {
+  drawPlayerHealthBar(x: number, width: number, player: Player) {
     // health bar player 1
     this.canvasContext.strokeStyle = "white";
     this.canvasContext.strokeRect(x, 20, width, 20);
@@ -40,7 +40,7 @@ export class Game {
     this.bindHitBox(this.player2, this.player1);
   }
 
-  private bindHitBox(mainPlayer: Sprite, SecondayPlayer: Sprite) {
+  private bindHitBox(mainPlayer: Player, SecondayPlayer: Player) {
     const attackBox = mainPlayer.getAttackBox();
     const victimBox = SecondayPlayer.getHitBox();
     if (!mainPlayer.getAttackBox().active) return;

@@ -1,5 +1,5 @@
 import "./style.css";
-import { Sprite } from "./Sprite";
+import { Player } from "./Player";
 import { Game } from "./Game";
 
 const canvas = document.querySelector("canvas")!;
@@ -10,8 +10,8 @@ canvas.height = 576;
 
 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-const player1 = new Sprite(canvas, "red");
-const player2 = new Sprite(canvas, "blue", { x: canvas.width - Sprite.initailWidth, y: 0 }, -1);
+const player1 = new Player(canvas, "red");
+const player2 = new Player(canvas, "blue", { x: canvas.width - Player.initailWidth, y: 0 }, -1);
 
 function bindEvent(eventName: "keydown" | "keyup", fun: "setInteract" | "stopInteract") {
   window.addEventListener(eventName, (e) => {
@@ -51,12 +51,16 @@ bindEvent("keydown", "setInteract");
 bindEvent("keyup", "stopInteract");
 
 const game = new Game(ctx, player1, player2);
+const image = new Image();
+image.src = "/public/bg.png";
+image.width = canvas.width;
+image.height = canvas.height;
 
 function animate() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(image, 0, 0);
   player1.update();
   player2.update();
-
   game.init();
   requestAnimationFrame(animate);
 }
