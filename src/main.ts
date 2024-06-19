@@ -11,11 +11,12 @@ canvas.height = 576;
 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
 const player1 = new Sprite(canvas, "red");
-const player2 = new Sprite(canvas, "blue", { x: canvas.width - Sprite.width, y: 0 }, -1);
+const player2 = new Sprite(canvas, "blue", { x: canvas.width - Sprite.initailWidth, y: 0 }, -1);
 
-function bindEvent(eventName: "keydown" | "keyup", fun: "move" | "stop") {
+function bindEvent(eventName: "keydown" | "keyup", fun: "setInteract" | "stopInteract") {
   window.addEventListener(eventName, (e) => {
     switch (e.code.toLowerCase()) {
+      // player1
       case "keya":
         player1[fun]("l");
         break;
@@ -25,6 +26,11 @@ function bindEvent(eventName: "keydown" | "keyup", fun: "move" | "stop") {
       case "keyw":
         player1[fun]("u");
         break;
+      case "space":
+        player1[fun]("f");
+        break;
+
+      // player2
       case "arrowleft":
         player2[fun]("l");
         break;
@@ -34,20 +40,24 @@ function bindEvent(eventName: "keydown" | "keyup", fun: "move" | "stop") {
       case "arrowup":
         player2[fun]("u");
         break;
+      case "numpad0":
+        player2[fun]("f");
+        break;
     }
   });
 }
 
-bindEvent("keydown", "move");
-bindEvent("keyup", "stop");
+bindEvent("keydown", "setInteract");
+bindEvent("keyup", "stopInteract");
 
-const game = new Game(player1, player2);
+const game = new Game(ctx, player1, player2);
 
 function animate() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   player1.update();
   player2.update();
-  game.checkHits();
+
+  game.init();
   requestAnimationFrame(animate);
 }
 
