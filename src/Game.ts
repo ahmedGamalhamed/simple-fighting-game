@@ -47,7 +47,9 @@ export class Game {
     // health bar player 1
     this.canvasContext.strokeStyle = "white";
     this.canvasContext.strokeRect(x, 20, width, 20);
-    this.canvasContext.fillStyle = player.playerColor;
+    this.canvasContext.fillStyle = "green";
+    if (player.health <= 60) this.canvasContext.fillStyle = "yellow";
+    if (player.health <= 20) this.canvasContext.fillStyle = "red";
     this.canvasContext.fillRect(x, 20, width * (player.health / 100), 20);
   }
 
@@ -62,10 +64,10 @@ export class Game {
     if (!mainPlayer.getAttackBox().active) return;
     if (mainAttackBox.rayY >= victimHitBox.top && mainAttackBox.rayY <= victimHitBox.bottom) {
       if (mainAttackBox.right >= victimHitBox.left && mainAttackBox.right <= victimHitBox.right) {
-        SecondayPlayer.sufferHit(1);
+        SecondayPlayer.takeHit(1);
       }
       if (mainAttackBox.left <= victimHitBox.right && mainAttackBox.left >= victimHitBox.left) {
-        SecondayPlayer.sufferHit(-1);
+        SecondayPlayer.takeHit(-1);
       }
     }
   }

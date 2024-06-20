@@ -1,12 +1,18 @@
 import { Game } from "./Game";
+import { Picture } from "./Picture";
 
 export class Player {
   static initailWidth = 50;
+
+  // public
   public width = Player.initailWidth;
-  public height = 150;
+  public height = 160;
   public canvasContext: CanvasRenderingContext2D;
   public health = 100;
   public isDead = false;
+
+  // private
+  private playerPicture: null | Picture = null;
   private attackBox = {
     x: 0,
     y: 0,
@@ -14,7 +20,6 @@ export class Player {
     height: 20,
     active: false,
   };
-
   private gravity = 0.6;
   private jumpFactor = 30;
   private speed = 2;
@@ -24,13 +29,24 @@ export class Player {
     u: false,
   };
   private attackDuration = 100;
-  private hitThrottle = false;
-  private fireThrottle = false;
-  private fireThrottleDuration = 500;
+  private canGetHit = false;
+  private attckThrottle = false;
+  private attckThrottleDuration = 100;
 
-  constructor(public canvas: HTMLCanvasElement, public playerColor: string, public position = { x: 0, y: 0 }, public direction: 1 | -1 | 0 = 0, public velocity = { x: 0, y: 0 }) {
+  constructor(
+    public canvas: HTMLCanvasElement,
+    public playerShape: { color: string } | { imageSrc: string; chunks?: number; animate?: boolean; animateEvery?: number },
+    public controls: "wasd" | "arrows" = "wasd",
+    public position = { x: 0, y: 0 },
+    public direction: 1 | -1 | 0 = 0,
+    public velocity = { x: 0, y: 0 }
+  ) {
     this.canvasContext = canvas.getContext("2d")!;
     this.updateAttackBox();
+    if ("imageSrc" in this.playerShape) {
+      this.playerPicture = new Picture(this.playerShape.imageSrc, undefined, 2.5);
+    }
+    this.bindKeyboardEvents();
   }
 
   updateAttackBox() {
@@ -91,8 +107,12 @@ export class Player {
 
   draw() {
     // fill player
-    this.canvasContext.fillStyle = this.playerColor;
-    this.canvasContext.fillRect(this.position.x, this.position.y, this.width, this.height);
+    if ("imageSrc" in this.playerShape) {
+      this.playerPicture!.draw(this.canvasContext, this.position, { ...this.playerShape });
+    } else if ("color" in this.playerShape) {
+      this.canvasContext.fillStyle = this.playerShape.color;
+      this.canvasContext.fillRect(this.position.x, this.position.y, this.width, this.height);
+    }
 
     // fill player eye
     if (!this.isDead) {
@@ -120,9 +140,9 @@ export class Player {
     this.draw();
   }
 
-  sufferHit(direction: 1 | -1) {
-    if (this.hitThrottle) return;
-    this.hitThrottle = true;
+  takeHit(direction: 1 | -1) {
+    if (this.canGetHit) return;
+    this.canGetHit = true;
     this.position.x += 50 * direction;
     this.health -= 20;
     console.log("Ouch", this.health);
@@ -130,16 +150,28 @@ export class Player {
       this.die();
     }
     setTimeout(() => {
-      this.hitThrottle = false;
+      this.canGetHit = false;
     }, this.attackDuration);
   }
 
   die() {
-    [this.width, this.height] = [this.height, this.width];
+    // [this.width, this.height] = [this.height, this.width];
     this.isDead = true;
   }
 
-  setInteract(type: "l" | "r" | "u" | "f") {
+  attack() {
+    if (this.attckThrottle) return;
+    this.attckThrottle = true;
+    this.attackBox.active = true;
+    setTimeout(() => {
+      this.attackBox.active = false;
+    }, this.attackDuration);
+
+    setTimeout(() => {
+      this.attckThrottle = false;
+    }, this.attckThrottleDuration);
+  }
+  private setInteract(type: "l" | "r" | "u" | "f") {
     if (this.isDead) return;
     switch (type) {
       case "l":
@@ -154,21 +186,12 @@ export class Player {
         this.pressedKeys.u = true;
         break;
       case "f":
-        if (this.fireThrottle) return;
-        this.fireThrottle = true;
-        this.attackBox.active = true;
-        setTimeout(() => {
-          this.attackBox.active = false;
-        }, this.attackDuration);
-
-        setTimeout(() => {
-          this.fireThrottle = false;
-        }, this.fireThrottleDuration);
+        this.attack();
         break;
     }
   }
 
-  stopInteract(type: "l" | "r" | "u" | "f") {
+  private stopInteract(type: "l" | "r" | "u" | "f") {
     switch (type) {
       case "l":
         this.pressedKeys.l = false;
@@ -180,5 +203,53 @@ export class Player {
         this.pressedKeys.u = false;
         break;
     }
+  }
+
+  private bindKeyboardEvents() {
+    const trigger = (code: string, cb: Function) => {
+      if (this.controls == "wasd") {
+        switch (code) {
+          // player1
+          case "keya":
+            cb("l");
+            break;
+          case "keyd":
+            cb("r");
+            break;
+          case "keyw":
+            cb("u");
+            break;
+          case "space":
+            cb("f");
+            break;
+        }
+      } else if (this.controls == "arrows") {
+        switch (code) {
+          // player2
+          case "arrowleft":
+            cb("l");
+            break;
+          case "arrowright":
+            cb("r");
+            break;
+          case "arrowup":
+            cb("u");
+            break;
+          case "numpad0":
+            cb("f");
+            break;
+        }
+      }
+    };
+
+    window.addEventListener("keydown", (e: KeyboardEvent) => {
+      const code = e.code.toLowerCase();
+      trigger(code, this.setInteract.bind(this));
+    });
+
+    window.addEventListener("keyup", (e: KeyboardEvent) => {
+      const code = e.code.toLowerCase();
+      trigger(code, this.stopInteract.bind(this));
+    });
   }
 }
