@@ -1,6 +1,7 @@
 import "./style.css";
 import { Player } from "./Player";
 import { Game } from "./Game";
+import { Picture } from "./Picture";
 
 const canvas = document.querySelector("canvas")!;
 const ctx = canvas?.getContext("2d")!;
@@ -51,16 +52,13 @@ bindEvent("keydown", "setInteract");
 bindEvent("keyup", "stopInteract");
 
 const game = new Game(ctx, player1, player2);
-const image = new Image();
-image.src = "/public/bg.png";
-image.width = canvas.width;
-image.height = canvas.height;
+const backgroundImage = new Picture("/bg.png");
+const shopImage = new Picture("/shop.png", undefined, 2);
 
 function animate() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.drawImage(image, 0, 0);
-  player1.update();
-  player2.update();
+  backgroundImage.draw(ctx);
+  shopImage.draw(ctx, { x: 720, y: 298 }, { sections: 6 });
   game.init();
   requestAnimationFrame(animate);
 }

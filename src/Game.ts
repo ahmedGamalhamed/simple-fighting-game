@@ -1,26 +1,42 @@
 import { Player } from "./Player";
 
 export class Game {
-  time = 60;
+  static floorY = 0;
+  static floorHeight = 20;
+
+  time = 10;
   constructor(public canvasContext: CanvasRenderingContext2D, public player1: Player, public player2: Player) {
     // console.log(this.player1);
-    setInterval(() => {
-      this.time -= 1;
+    Game.floorY = this.canvasContext.canvas.height - Game.floorHeight;
+    const interval = setInterval(() => {
+      // this.time -= 1;
+      if (this.time == 0) clearInterval(interval);
     }, 1000);
   }
 
   init() {
-    this.initHealthBars();
-    this.initTimer();
-    this.checkHits();
+    this.drawTimer();
+    this.drawHealthBars();
+    if (this.time > 0) {
+      this.drawHealthBars();
+      this.checkHits();
+      this.player1.update();
+      this.player2.update();
+    } else {
+      let status = "It's a tie";
+      if (this.player1.health > this.player2.health) status = "Player 1 Wins!";
+      else if (this.player2.health > this.player1.health) status = "Player 2 Wins!";
+      this.canvasContext.fillStyle = "white";
+      this.canvasContext.fillText(status, this.canvasContext.canvas.width / 2 - 100, this.canvasContext.canvas.height / 2 + 30);
+    }
   }
 
-  initTimer() {
+  drawTimer() {
     this.canvasContext.font = "48px serif";
-    this.canvasContext.fillText(this.time + "", this.canvasContext.canvas.width / 2 - 30, 45);
+    this.canvasContext.fillText(this.time + "", this.canvasContext.canvas.width / 2 - 15, 45);
   }
 
-  initHealthBars() {
+  drawHealthBars() {
     const width = this.canvasContext.canvas.width / 2.5;
     this.drawPlayerHealthBar(20, width, this.player1);
     const start2 = this.canvasContext.canvas.width - 20 - width;
@@ -41,14 +57,14 @@ export class Game {
   }
 
   private bindHitBox(mainPlayer: Player, SecondayPlayer: Player) {
-    const attackBox = mainPlayer.getAttackBox();
-    const victimBox = SecondayPlayer.getHitBox();
+    const mainAttackBox = mainPlayer.getAttackBox();
+    const victimHitBox = SecondayPlayer.getHitBox();
     if (!mainPlayer.getAttackBox().active) return;
-    if (attackBox.rayY >= victimBox.top && attackBox.rayY <= victimBox.bottom) {
-      if (attackBox.right >= victimBox.left && attackBox.right <= victimBox.right) {
+    if (mainAttackBox.rayY >= victimHitBox.top && mainAttackBox.rayY <= victimHitBox.bottom) {
+      if (mainAttackBox.right >= victimHitBox.left && mainAttackBox.right <= victimHitBox.right) {
         SecondayPlayer.sufferHit(1);
       }
-      if (attackBox.left <= victimBox.right && attackBox.left >= victimBox.left) {
+      if (mainAttackBox.left <= victimHitBox.right && mainAttackBox.left >= victimHitBox.left) {
         SecondayPlayer.sufferHit(-1);
       }
     }

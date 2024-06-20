@@ -1,3 +1,5 @@
+import { Game } from "./Game";
+
 export class Player {
   static initailWidth = 50;
   public width = Player.initailWidth;
@@ -8,7 +10,7 @@ export class Player {
   private attackBox = {
     x: 0,
     y: 0,
-    width: 100,
+    width: 60,
     height: 20,
     active: false,
   };
@@ -26,7 +28,7 @@ export class Player {
   private fireThrottle = false;
   private fireThrottleDuration = 500;
 
-  constructor(public canvas: HTMLCanvasElement, public playerColor: string, public position = { x: 0, y: 0 }, private direction: 1 | -1 | 0 = 0, public velocity = { x: 0, y: 0 }) {
+  constructor(public canvas: HTMLCanvasElement, public playerColor: string, public position = { x: 0, y: 0 }, public direction: 1 | -1 | 0 = 0, public velocity = { x: 0, y: 0 }) {
     this.canvasContext = canvas.getContext("2d")!;
     this.updateAttackBox();
   }
@@ -39,10 +41,10 @@ export class Player {
 
   getHitBox() {
     return {
-      left: this.position.x,
-      right: this.position.x + this.width,
-      top: this.position.y,
-      bottom: this.position.y + this.height,
+      left: Math.floor(this.position.x),
+      right: Math.floor(this.position.x + this.width),
+      top: Math.floor(this.position.y),
+      bottom: Math.floor(this.position.y + this.height),
     };
   }
 
@@ -60,7 +62,6 @@ export class Player {
   }
 
   updateVelocity() {
-    const floor = this.canvas.height - 20;
     if (this.pressedKeys.l) {
       this.velocity.x = -this.speed;
       this.direction = -1;
@@ -71,11 +72,11 @@ export class Player {
       this.velocity.x = 0;
     }
 
-    if (this.pressedKeys.u && this.position.y + this.height >= floor) {
+    if (this.pressedKeys.u && this.position.y + this.height >= Game.floorY) {
       this.velocity.y = this.gravity * -this.jumpFactor;
     }
 
-    if (this.position.y + this.height + this.velocity.y < floor) this.velocity.y += this.gravity;
+    if (this.position.y + this.height + this.velocity.y < Game.floorY) this.velocity.y += this.gravity;
     else this.velocity.y = 0;
   }
 
