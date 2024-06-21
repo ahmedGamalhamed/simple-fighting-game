@@ -1,6 +1,34 @@
 import { Game } from "./Game";
 import { Picture } from "./Picture";
 
+interface IStates {
+  idle?: {
+    src: string;
+    start: number;
+    count: number;
+  };
+  move?: {
+    src: string;
+    start: number;
+    count: number;
+  };
+  attack?: {
+    src: string;
+    start: number;
+    count: number;
+  };
+  hit?: {
+    src: string;
+    start: number;
+    count: number;
+  };
+  dead?: {
+    src: string;
+    start: number;
+    count: number;
+  };
+}
+
 export class Player {
   static initailWidth = 50;
 
@@ -16,7 +44,7 @@ export class Player {
   private attackBox = {
     x: 0,
     y: 0,
-    width: 60,
+    width: 100,
     height: 20,
     active: false,
   };
@@ -28,14 +56,16 @@ export class Player {
     r: false,
     u: false,
   };
-  private attackDuration = 100;
+  private attackDuration = 800;
+  private hitDuration = 500;
   private canGetHit = false;
   private attckThrottle = false;
-  private attckThrottleDuration = 100;
+  private states: IStates = {};
+  public currentState: keyof IStates = "idle";
 
   constructor(
     public canvas: HTMLCanvasElement,
-    public playerShape: { color: string } | { imageSrc: string; chunks?: number; animate?: boolean; animateEvery?: number },
+    public playerShape: { color?: string; imageSrc?: string; offset?: { x: number; y: number }; chunks?: number; animate?: boolean; animateEvery?: number; states?: IStates },
     public controls: "wasd" | "arrows" = "wasd",
     public position = { x: 0, y: 0 },
     public direction: 1 | -1 | 0 = 0,
@@ -44,7 +74,10 @@ export class Player {
     this.canvasContext = canvas.getContext("2d")!;
     this.updateAttackBox();
     if ("imageSrc" in this.playerShape) {
-      this.playerPicture = new Picture(this.playerShape.imageSrc, undefined, 2.5);
+      this.playerPicture = new Picture(this.playerShape.imageSrc!, undefined, 2.5);
+      if ("states" in this.playerShape) {
+        this.states = this.playerShape.states!;
+      }
     }
     this.bindKeyboardEvents();
   }
@@ -107,10 +140,11 @@ export class Player {
 
   draw() {
     // fill player
+
     if ("imageSrc" in this.playerShape) {
-      this.playerPicture!.draw(this.canvasContext, this.position, { ...this.playerShape });
+      this.animate();
     } else if ("color" in this.playerShape) {
-      this.canvasContext.fillStyle = this.playerShape.color;
+      this.canvasContext.fillStyle = this.playerShape.color!;
       this.canvasContext.fillRect(this.position.x, this.position.y, this.width, this.height);
     }
 
@@ -142,16 +176,18 @@ export class Player {
 
   takeHit(direction: 1 | -1) {
     if (this.canGetHit) return;
+
     this.canGetHit = true;
-    this.position.x += 50 * direction;
+    this.position.x += 100 * direction;
     this.health -= 20;
-    console.log("Ouch", this.health);
     if (this.health <= 0) {
       this.die();
     }
+    this.currentState = "hit";
     setTimeout(() => {
+      this.currentState = "idle";
       this.canGetHit = false;
-    }, this.attackDuration);
+    }, this.hitDuration);
   }
 
   die() {
@@ -164,31 +200,55 @@ export class Player {
     this.attckThrottle = true;
     this.attackBox.active = true;
     setTimeout(() => {
+      this.currentState = "idle";
       this.attackBox.active = false;
-    }, this.attackDuration);
-
-    setTimeout(() => {
       this.attckThrottle = false;
-    }, this.attckThrottleDuration);
+    }, this.attackDuration);
   }
+
+  private animate() {
+    const state = this.states[this.currentState];
+    if (!this.playerShape.animate || !state) return;
+    if (this.playerPicture?.image) {
+      this.playerPicture.updateSrc(state.src);
+    }
+    this.playerPicture!.draw(
+      this.canvasContext,
+      { x: this.position.x + (this.playerShape?.offset?.x || 0), y: this.position.y + (this.playerShape?.offset?.y || 0) },
+      {
+        ...this.playerShape,
+        chunks: state.count,
+        startChunk: state.start,
+        chunksToAnimate: state.count,
+      }
+    );
+  }
+
+  private updatePlayerState(type: keyof IStates) {
+    if (this.currentState == "attack") return;
+    if (Object.values(this.pressedKeys).includes(true) && type == "idle") return;
+    this.currentState = type;
+  }
+
   private setInteract(type: "l" | "r" | "u" | "f") {
     if (this.isDead) return;
+    let newState: keyof IStates = "move";
     switch (type) {
       case "l":
         this.pressedKeys.l = true;
-        this.pressedKeys.r = false;
         break;
       case "r":
         this.pressedKeys.r = true;
-        this.pressedKeys.l = false;
         break;
       case "u":
         this.pressedKeys.u = true;
         break;
       case "f":
+        newState = "attack";
         this.attack();
         break;
     }
+    this.updatePlayerState(newState);
   }
 
   private stopInteract(type: "l" | "r" | "u" | "f") {
@@ -203,10 +263,13 @@ export class Player {
         this.pressedKeys.u = false;
         break;
     }
+    this.updatePlayerState("idle");
   }
 
   private bindKeyboardEvents() {
-    const trigger = (code: string, cb: Function) => {
+    const trigger = (e: KeyboardEvent, cb: Function) => {
+      // trigger movment
+      const code = e.code.toLowerCase();
       if (this.controls == "wasd") {
         switch (code) {
           // player1
@@ -243,13 +306,11 @@ export class Player {
     };
 
     window.addEventListener("keydown", (e: KeyboardEvent) => {
-      const code = e.code.toLowerCase();
-      trigger(code, this.setInteract.bind(this));
+      trigger(e, this.setInteract.bind(this));
     });
 
     window.addEventListener("keyup", (e: KeyboardEvent) => {
-      const code = e.code.toLowerCase();
-      trigger(code, this.stopInteract.bind(this));
+      trigger(e, this.stopInteract.bind(this));
     });
   }
 }
