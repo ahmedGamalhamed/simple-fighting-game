@@ -2,7 +2,7 @@
 
 # Simple Fighting Game
 
-A simple fighting game built only with html canvas and JS
+A simple fighting game built only with html canvas and JS/TS
 
 ## Installation
 
