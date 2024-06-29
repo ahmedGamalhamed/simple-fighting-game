@@ -1,32 +1,23 @@
 import { Game } from "./Game";
 import { Picture } from "./Picture";
 
+interface State {
+  src: string;
+  rtlSrc: string;
+  start: number;
+  count: number;
+  offset?: {
+    x?: number;
+    y?: number;
+  };
+}
+
 interface IStates {
-  idle?: {
-    src: string;
-    start: number;
-    count: number;
-  };
-  move?: {
-    src: string;
-    start: number;
-    count: number;
-  };
-  attack?: {
-    src: string;
-    start: number;
-    count: number;
-  };
-  hit?: {
-    src: string;
-    start: number;
-    count: number;
-  };
-  dead?: {
-    src: string;
-    start: number;
-    count: number;
-  };
+  idle?: State;
+  move?: State;
+  attack?: State;
+  hit?: State;
+  dead?: State;
 }
 
 export class Player {
@@ -44,8 +35,8 @@ export class Player {
   private attackBox = {
     x: 0,
     y: 0,
-    width: 100,
-    height: 20,
+    width: 150,
+    height: 0,
     active: false,
   };
   private gravity = 0.6;
@@ -143,24 +134,25 @@ export class Player {
 
     if ("imageSrc" in this.playerShape) {
       this.animate();
-    } else if ("color" in this.playerShape) {
+    }
+    if ("color" in this.playerShape) {
       this.canvasContext.fillStyle = this.playerShape.color!;
       this.canvasContext.fillRect(this.position.x, this.position.y, this.width, this.height);
     }
 
-    // fill player eye
     if (!this.isDead) {
-      const hitBox = this.getHitBox();
-      this.canvasContext.fillStyle = "green";
-      this.canvasContext.beginPath();
-      let eyePosition = (hitBox.left + hitBox.right) / 2;
-      if (this.direction == 1) {
-        eyePosition = hitBox.right - 10;
-      } else if (this.direction == -1) {
-        eyePosition = hitBox.left + 10;
-      }
-      this.canvasContext.arc(eyePosition, hitBox.top + 10, 10, 0, 2 * Math.PI);
-      this.canvasContext.fill();
+      // const hitBox = this.getHitBox();
+      // this.canvasContext.fillStyle = "green";
+      // this.canvasContext.beginPath();
+      // fill player eye
+      // let eyePosition = (hitBox.left + hitBox.right) / 2;
+      // if (this.direction == 1) {
+      //   eyePosition = hitBox.right - 10;
+      // } else if (this.direction == -1) {
+      //   eyePosition = hitBox.left + 10;
+      // }
+      // this.canvasContext.arc(eyePosition, hitBox.top + 10, 10, 0, 2 * Math.PI);
+      // this.canvasContext.fill();
     }
 
     // fill player attack box
@@ -210,11 +202,13 @@ export class Player {
     const state = this.states[this.currentState];
     if (!this.playerShape.animate || !state) return;
     if (this.playerPicture?.image) {
-      this.playerPicture.updateSrc(state.src);
+      let src = state.src;
+      if (this.direction == -1) src = state.rtlSrc;
+      this.playerPicture.updateSrc(src);
     }
     this.playerPicture!.draw(
       this.canvasContext,
-      { x: this.position.x + (this.playerShape?.offset?.x || 0), y: this.position.y + (this.playerShape?.offset?.y || 0) },
+      { x: this.position.x + (this.playerShape?.offset?.x || 0) + (state.offset?.x || 0) * this.direction, y: this.position.y + (this.playerShape?.offset?.y || 0) },
       {
         ...this.playerShape,
         chunks: state.count,

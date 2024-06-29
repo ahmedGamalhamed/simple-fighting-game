@@ -3,26 +3,26 @@ import { Player } from "./Player";
 export class Game {
   static floorY = 0;
   static floorHeight = 20;
-
-  time = 10;
+  interval;
+  time = 60;
   constructor(public canvasContext: CanvasRenderingContext2D, public player1: Player, public player2: Player) {
     // console.log(this.player1);
     Game.floorY = this.canvasContext.canvas.height - Game.floorHeight;
-    const interval = setInterval(() => {
-      // this.time -= 1;
-      if (this.time == 0) clearInterval(interval);
+    this.interval = setInterval(() => {
+      this.time -= 1;
     }, 1000);
   }
 
   init() {
     this.drawTimer();
     this.drawHealthBars();
-    if (this.time > 0) {
+    if (this.time > 0 && !this.player1.isDead && !this.player2.isDead) {
       this.drawHealthBars();
       this.checkHits();
       this.player1.update();
       this.player2.update();
     } else {
+      clearInterval(this.interval);
       let status = "It's a tie";
       if (this.player1.health > this.player2.health) status = "Player 1 Wins!";
       else if (this.player2.health > this.player1.health) status = "Player 2 Wins!";
@@ -63,10 +63,10 @@ export class Game {
     const victimHitBox = SecondayPlayer.getHitBox();
     if (!mainPlayer.getAttackBox().active) return;
     if (mainAttackBox.rayY >= victimHitBox.top && mainAttackBox.rayY <= victimHitBox.bottom) {
-      if (mainAttackBox.right >= victimHitBox.left && mainAttackBox.right <= victimHitBox.right) {
+      if (mainAttackBox.right >= victimHitBox.left && mainAttackBox.right - 50 <= victimHitBox.right) {
         SecondayPlayer.takeHit(1);
       }
-      if (mainAttackBox.left <= victimHitBox.right && mainAttackBox.left >= victimHitBox.left) {
+      if (mainAttackBox.left <= victimHitBox.right && mainAttackBox.left + 50 >= victimHitBox.left) {
         SecondayPlayer.takeHit(-1);
       }
     }
